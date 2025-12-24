@@ -12,3 +12,19 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Cache and artifacts
+cache/
+temp_artifacts/
+*.log
+
+# Credentials (never commit)
+credentials/
+*-credentials.json
+service-account*.json
+gcp-key*.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
