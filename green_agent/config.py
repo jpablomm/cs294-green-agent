@@ -5,6 +5,23 @@ Single source of truth for all Green Agent environment variables.
 Import from here instead of using os.environ.get() directly.
 """
 import os
+import base64
+import tempfile
+
+# Handle GOOGLE_APPLICATION_CREDENTIALS_JSON (base64 encoded)
+# This is used when credentials are passed as env vars (e.g., in docker-compose)
+_creds_json_b64 = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if _creds_json_b64 and not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+    try:
+        creds_json = base64.b64decode(_creds_json_b64).decode("utf-8")
+        creds_file = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, prefix="gcp_creds_"
+        )
+        creds_file.write(creds_json)
+        creds_file.close()
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_file.name
+    except Exception as e:
+        print(f"Warning: Failed to decode GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
 
 # Loop Detection
 ACTION_REPEAT_THRESHOLD = int(os.environ.get("ACTION_REPEAT_THRESHOLD", "3"))
