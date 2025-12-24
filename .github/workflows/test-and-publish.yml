@@ -44,27 +44,26 @@ jobs:
           load: true
           platforms: linux/amd64
 
-      - name: Set up GCP credentials
-        if: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON != '' }}
-        run: |
-          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" | base64 -d > /tmp/gcp-credentials.json
-          echo "GCP credentials configured"
-
       - name: Start agent container
         env:
             SECRETS_JSON: ${{ toJson(secrets) }}
+            GCP_CREDENTIALS_B64: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+            GCP_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
         run: |
           echo "$SECRETS_JSON" | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
 
-          # Add GCP credentials path if credentials exist
-          if [ -f /tmp/gcp-credentials.json ]; then
+          # Set up GCP credentials if available
+          if [ -n "$GCP_CREDENTIALS_B64" ]; then
+            echo "$GCP_CREDENTIALS_B64" | base64 -d > /tmp/gcp-credentials.json
+            echo "GCP credentials configured"
             docker run -d -p 9009:9009 --name agent-container \
               --env-file .env \
               -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json \
-              -e GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }} \
+              -e GOOGLE_CLOUD_PROJECT="$GCP_PROJECT" \
               -v /tmp/gcp-credentials.json:/tmp/gcp-credentials.json:ro \
               $(echo "${{ steps.meta.outputs.tags }}" | head -n1) --host 0.0.0.0 --port 9009
           else
+            echo "No GCP credentials configured"
             docker run -d -p 9009:9009 --name agent-container --env-file .env $(echo "${{ steps.meta.outputs.tags }}" | head -n1) --host 0.0.0.0 --port 9009
           fi
 
