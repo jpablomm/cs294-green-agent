@@ -324,6 +324,25 @@ class GreenAgentExecutor(AgentExecutor):
                     # Merge nested config into top level, preserving other keys like "participants"
                     nested_config = config.pop("config")
                     config.update(nested_config)
+
+                # Handle participants section to construct white_agent_url
+                # AgentBeats format: {"participants": {"white_agent": "jpablomm/cs294-white-agent"}}
+                # In docker-compose network, container name = participant name, port = 9009
+                if "participants" in config and not config.get("white_agent_url"):
+                    participants = config["participants"]
+                    if isinstance(participants, dict) and participants:
+                        # Find white_agent participant, or use the first one
+                        participant_name = None
+                        if "white_agent" in participants:
+                            participant_name = "white_agent"
+                        else:
+                            # Use first participant
+                            participant_name = next(iter(participants.keys()))
+
+                        if participant_name:
+                            config["white_agent_url"] = f"http://{participant_name}:9009"
+                            logger.info(f"Constructed white_agent_url from participants: {config['white_agent_url']}")
+
                 return config
         except json.JSONDecodeError:
             pass
