@@ -68,9 +68,9 @@ def create_agent_card(url: str) -> AgentCard:
         default_input_modes=["application/json"],
         default_output_modes=["application/json"],
         capabilities=AgentCapabilities(
-            streaming=True,
-            pushNotifications=True,
-            stateTransitionHistory=True,
+            streaming=False,  # Disabled for agentbeats-client compatibility
+            pushNotifications=False,
+            stateTransitionHistory=False,
         ),
         skills=skills,
         provider=AgentProvider(
