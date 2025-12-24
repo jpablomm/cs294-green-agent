@@ -318,6 +318,12 @@ class GreenAgentExecutor(AgentExecutor):
         try:
             config = json.loads(message)
             if isinstance(config, dict):
+                # Handle agentbeats format: {"participants": {...}, "config": {...}}
+                # Flatten by merging the nested "config" key into top-level
+                if "config" in config and isinstance(config["config"], dict):
+                    # Merge nested config into top level, preserving other keys like "participants"
+                    nested_config = config.pop("config")
+                    config.update(nested_config)
                 return config
         except json.JSONDecodeError:
             pass
